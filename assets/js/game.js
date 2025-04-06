@@ -1,5 +1,5 @@
-// Game elements
 document.addEventListener('DOMContentLoaded', function() {
+    // Game elements
     const gameContainer = document.querySelector('.game-container');
     const leftPaddle = document.getElementById('leftPaddle');
     const rightPaddle = document.getElementById('rightPaddle');
@@ -17,6 +17,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const wallSound = document.getElementById('wallSound');
     const scoreSound = document.getElementById('scoreSound');
     
+    // Game constants
+    const MAX_SPEED = 15;
+    const SCORE_COOLDOWN = 1000;
+    const INITIAL_BALL_SPEED = 5;
+    
     // Game variables
     let gameWidth = gameContainer.offsetWidth;
     let gameHeight = gameContainer.offsetHeight;
@@ -29,12 +34,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let ballX = gameWidth / 2 - ballSize / 2;
     let ballY = gameHeight / 2 - ballSize / 2;
     
-    let ballSpeedX = 5;
-    let ballSpeedY = 5;
+    let ballSpeedX = INITIAL_BALL_SPEED;
+    let ballSpeedY = INITIAL_BALL_SPEED;
     let computerSpeed = 4;
     
     let playerScore = 0;
     let computerScore = 0;
+    let canScore = true;
     
     let gameRunning = false;
     let gamePaused = false;
@@ -51,8 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const rect = gameContainer.getBoundingClientRect();
         const mouseY = e.clientY - rect.top - paddleHeight / 2;
-        
-        // Keep paddle within game boundaries
         leftPaddleY = Math.max(0, Math.min(gameHeight - paddleHeight, mouseY));
         leftPaddle.style.top = leftPaddleY + 'px';
     });
@@ -64,12 +68,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const rect = gameContainer.getBoundingClientRect();
         const touchY = e.touches[0].clientY - rect.top - paddleHeight / 2;
-        
         leftPaddleY = Math.max(0, Math.min(gameHeight - paddleHeight, touchY));
         leftPaddle.style.top = leftPaddleY + 'px';
     });
     
-    // Start game function
     function startGame() {
         if (gameRunning) return;
         
@@ -77,25 +79,15 @@ document.addEventListener('DOMContentLoaded', function() {
         gamePaused = false;
         startButton.textContent = 'Restart';
         
-        // Reset scores if game was over
         if (playerScore > 0 || computerScore > 0) {
-            playerScore = 0;
-            computerScore = 0;
-            playerScoreDisplay.textContent = '0';
-            computerScoreDisplay.textContent = '0';
+            resetGame();
         }
         
-        // Hide game over screen if visible
         gameOverScreen.classList.remove('show');
-        
-        // Reset ball position
         resetBall();
-        
-        // Start game loop
         gameLoop();
     }
     
-    // Toggle pause function
     function togglePause() {
         if (!gameRunning) return;
         
@@ -109,7 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Reset game function
     function resetGame() {
         gameRunning = false;
         gamePaused = false;
@@ -120,24 +111,21 @@ document.addEventListener('DOMContentLoaded', function() {
         gameOverScreen.classList.remove('show');
         startButton.textContent = 'Start Game';
         pauseButton.textContent = 'Pause';
+        canScore = true;
         resetBall();
     }
     
-    // Reset ball position
     function resetBall() {
         ballX = gameWidth / 2 - ballSize / 2;
         ballY = gameHeight / 2 - ballSize / 2;
         
-        // Randomize initial direction
-        ballSpeedX = Math.random() > 0.5 ? 5 : -5;
-        ballSpeedY = (Math.random() * 4 - 2); // Random angle between -2 and 2
+        ballSpeedX = Math.random() > 0.5 ? INITIAL_BALL_SPEED : -INITIAL_BALL_SPEED;
+        ballSpeedY = (Math.random() * 2 - 1) * INITIAL_BALL_SPEED;
         
-        // Update ball position
         ball.style.left = ballX + 'px';
         ball.style.top = ballY + 'px';
     }
     
-    // Create particles for visual effect
     function createParticles(x, y, color) {
         for (let i = 0; i < 10; i++) {
             const particle = document.createElement('div');
@@ -146,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
             particle.style.top = y + 'px';
             particle.style.background = color;
             
-            // Random velocity
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 3 + 1;
             const vx = Math.cos(angle) * speed;
@@ -154,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             gameContainer.appendChild(particle);
             
-            // Animate particle
             let life = 0;
             const particleInterval = setInterval(() => {
                 life++;
@@ -172,87 +158,97 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Main game loop
     function gameLoop() {
         if (gamePaused) return;
         
-        // Update ball position
         ballX += ballSpeedX;
         ballY += ballSpeedY;
         
-        // Ball collision with top and bottom walls
+        // Wall collisions
         if (ballY <= 0 || ballY >= gameHeight - ballSize) {
             ballSpeedY = -ballSpeedY;
             if (wallSound) wallSound.play();
             createParticles(ballX, ballY <= 0 ? 0 : gameHeight - ballSize, '#ffffff');
             
-            // Add slight randomness to bounce
-            ballSpeedX *= 1.02;
-            ballSpeedY *= 1.02;
+            // Add speed limiter
+            ballSpeedX = Math.min(Math.max(-MAX_SPEED, ballSpeedX * 1.02), MAX_SPEED);
+            ballSpeedY = Math.min(Math.max(-MAX_SPEED, ballSpeedY * 1.02), MAX_SPEED);
         }
         
-        // Ball collision with paddles
+        // Paddle collisions
         // Left paddle
-        if (ballX <= paddleWidth + 30 && 
+        if (ballX <= paddleWidth + 15 && 
             ballY + ballSize >= leftPaddleY && 
-            ballY <= leftPaddleY + paddleHeight) {
+            ballY <= leftPaddleY + paddleHeight &&
+            ballSpeedX < 0) {
             
-            // Calculate bounce angle based on where ball hits paddle
             const hitPosition = (ballY - leftPaddleY) / paddleHeight;
-            const bounceAngle = (hitPosition - 0.5) * Math.PI / 2;
+            const bounceAngle = (hitPosition - 0.5) * Math.PI / 3;
             
-            // Calculate new speed based on angle
-            const speed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY) * 1.05;
-            ballSpeedX = Math.cos(bounceAngle) * speed;
+            const speed = Math.min(
+                Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY) * 1.05,
+                MAX_SPEED
+            );
+            
+            ballSpeedX = Math.abs(Math.cos(bounceAngle) * speed);
             ballSpeedY = Math.sin(bounceAngle) * speed;
             
             if (paddleSound) paddleSound.play();
             createParticles(ballX, ballY, '#00ff9d');
             
-            // Add pulse effect to paddle
             leftPaddle.classList.add('pulse');
             setTimeout(() => leftPaddle.classList.remove('pulse'), 500);
         }
         
-        // Right paddle (computer)
-        if (ballX >= gameWidth - paddleWidth - 30 - ballSize && 
+        // Right paddle
+        if (ballX >= gameWidth - paddleWidth - 15 - ballSize && 
             ballY + ballSize >= rightPaddleY && 
-            ballY <= rightPaddleY + paddleHeight) {
+            ballY <= rightPaddleY + paddleHeight &&
+            ballSpeedX > 0) {
             
-            // Calculate bounce angle based on where ball hits paddle
             const hitPosition = (ballY - rightPaddleY) / paddleHeight;
-            const bounceAngle = Math.PI - (hitPosition - 0.5) * Math.PI / 2;
+            const bounceAngle = Math.PI - (hitPosition - 0.5) * Math.PI / 3;
             
-            // Calculate new speed based on angle
-            const speed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY) * 1.05;
-            ballSpeedX = Math.cos(bounceAngle) * speed;
+            const speed = Math.min(
+                Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY) * 1.05,
+                MAX_SPEED
+            );
+            
+            ballSpeedX = -Math.abs(Math.cos(bounceAngle) * speed);
             ballSpeedY = Math.sin(bounceAngle) * speed;
             
             if (paddleSound) paddleSound.play();
             createParticles(ballX, ballY, '#ff00aa');
             
-            // Add pulse effect to paddle
             rightPaddle.classList.add('pulse');
             setTimeout(() => rightPaddle.classList.remove('pulse'), 500);
         }
         
-        // Ball out of bounds - scoring
-        if (ballX < 0) {
-            // Computer scores
+        // Scoring
+        if (ballX < 0 && canScore) {
             computerScore++;
             computerScoreDisplay.textContent = computerScore;
             if (scoreSound) scoreSound.play();
+            canScore = false;
+            
+            setTimeout(() => {
+                canScore = true;
+            }, SCORE_COOLDOWN);
             
             if (computerScore >= 5) {
                 gameOver(false);
             } else {
                 resetBall();
             }
-        } else if (ballX > gameWidth - ballSize) {
-            // Player scores
+        } else if (ballX > gameWidth - ballSize && canScore) {
             playerScore++;
             playerScoreDisplay.textContent = playerScore;
             if (scoreSound) scoreSound.play();
+            canScore = false;
+            
+            setTimeout(() => {
+                canScore = true;
+            }, SCORE_COOLDOWN);
             
             if (playerScore >= 5) {
                 gameOver(true);
@@ -261,34 +257,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Computer AI - simple follow the ball with some delay
+        // Computer AI
         if (gameRunning && !gamePaused) {
-            const paddleCenter = rightPaddleY + paddleHeight / 2;
-            const ballCenter = ballY + ballSize / 2;
+            const difficulty = Math.min(1 + (playerScore * 0.1), 2);
+            const aiSpeed = computerSpeed * difficulty;
             
-            // Only move if ball is coming towards computer
             if (ballSpeedX > 0) {
-                if (paddleCenter < ballCenter - 10) {
-                    rightPaddleY += computerSpeed;
-                } else if (paddleCenter > ballCenter + 10) {
-                    rightPaddleY -= computerSpeed;
-                }
+                const predictedY = ballY + (ballSpeedY * ((gameWidth - paddleWidth - ballX) / ballSpeedX));
+                const targetY = Math.max(0, Math.min(gameHeight - paddleHeight, predictedY - paddleHeight / 2));
+                
+                const difference = targetY - rightPaddleY;
+                rightPaddleY += Math.sign(difference) * Math.min(Math.abs(difference), aiSpeed);
             }
             
-            // Keep computer paddle within bounds
-            rightPaddleY = Math.max(0, Math.min(gameHeight - paddleHeight, rightPaddleY));
             rightPaddle.style.top = rightPaddleY + 'px';
         }
         
-        // Update ball position on screen
         ball.style.left = ballX + 'px';
         ball.style.top = ballY + 'px';
         
-        // Continue game loop
         animationFrameId = requestAnimationFrame(gameLoop);
     }
     
-    // Game over function
     function gameOver(playerWon) {
         gameRunning = false;
         cancelAnimationFrame(animationFrameId);
@@ -296,7 +286,6 @@ document.addEventListener('DOMContentLoaded', function() {
         winnerText.textContent = playerWon ? 'Player Wins!' : 'Computer Wins!';
         winnerText.style.color = playerWon ? '#00ff9d' : '#ff00aa';
         
-        // Create celebration particles
         for (let i = 0; i < 50; i++) {
             const x = Math.random() * gameWidth;
             const y = Math.random() * gameHeight;
@@ -305,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         gameOverScreen.classList.add('show');
         
-        // Optional: Save score to server via AJAX
+        // Save score
         fetch('save_score.php', {
             method: 'POST',
             headers: {
@@ -318,12 +307,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }),
         })
         .then(response => response.json())
-        .then(data => {
-            console.log('Score saved:', data);
-        })
-        .catch((error) => {
-            console.error('Error saving score:', error);
-        });
+        .then(data => console.log('Score saved:', data))
+        .catch(error => console.error('Error saving score:', error));
     }
     
     // Handle window resize
@@ -331,12 +316,10 @@ document.addEventListener('DOMContentLoaded', function() {
         gameWidth = gameContainer.offsetWidth;
         gameHeight = gameContainer.offsetHeight;
         
-        // Keep paddles and ball in bounds
         leftPaddleY = Math.max(0, Math.min(gameHeight - paddleHeight, leftPaddleY));
         rightPaddleY = Math.max(0, Math.min(gameHeight - paddleHeight, rightPaddleY));
         ballY = Math.max(0, Math.min(gameHeight - ballSize, ballY));
         
-        // Update positions
         leftPaddle.style.top = leftPaddleY + 'px';
         rightPaddle.style.top = rightPaddleY + 'px';
         ball.style.top = ballY + 'px';
