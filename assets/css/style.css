@@ -1,0 +1,223 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0f0f1a;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-container {
+    position: relative;
+    width: 800px;
+    height: 500px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 10px;
+    box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
+    overflow: hidden;
+}
+
+.game-border {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 2px solid rgba(0, 150, 255, 0.5);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+.center-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(to bottom, 
+        transparent 0%, 
+        rgba(0, 150, 255, 0.5) 10%, 
+        rgba(0, 150, 255, 0.5) 90%, 
+        transparent 100%);
+    opacity: 0.3;
+}
+
+.paddle {
+    position: absolute;
+    width: 15px;
+    height: 100px;
+    background: linear-gradient(to right, #00ff9d, #00b8ff);
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0, 255, 157, 0.7);
+    transition: transform 0.1s ease-out;
+}
+
+#leftPaddle {
+    left: 30px;
+    top: 200px;
+}
+
+#rightPaddle {
+    right: 30px;
+    top: 200px;
+    background: linear-gradient(to left, #ff00aa, #ff0066);
+    box-shadow: 0 0 15px rgba(255, 0, 170, 0.7);
+}
+
+.ball {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 20px #fff;
+    left: 390px;
+    top: 240px;
+}
+
+.score {
+    position: absolute;
+    top: 20px;
+    font-size: 3rem;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+#playerScore {
+    left: 300px;
+    color: #00ff9d;
+}
+
+#computerScore {
+    right: 300px;
+    color: #ff00aa;
+}
+
+.controls {
+    margin-top: 30px;
+    display: flex;
+    gap: 20px;
+}
+
+button {
+    padding: 12px 25px;
+    background: rgba(0, 150, 255, 0.2);
+    border: 2px solid rgba(0, 150, 255, 0.5);
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background: rgba(0, 150, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 150, 255, 0.5);
+}
+
+.game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+}
+
+.game-over.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.game-over h2 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px #fff;
+}
+
+.particle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #fff;
+    pointer-events: none;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.pulse {
+    animation: pulse 0.5s;
+}
+
+/* Additional styles for PHP version */
+.user-info {
+    margin-top: 20px;
+    background: rgba(0, 150, 255, 0.1);
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: 1px solid rgba(0, 150, 255, 0.3);
+}
+
+/* High scores table styling */
+.high-scores {
+    margin-top: 20px;
+    width: 80%;
+    max-width: 800px;
+}
+
+.high-scores table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(0, 150, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.high-scores th, .high-scores td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 150, 255, 0.3);
+}
+
+.high-scores th {
+    background: rgba(0, 150, 255, 0.2);
+    font-weight: bold;
+}
+
+.high-scores tr:last-child td {
+    border-bottom: none;
+}
+
+.high-scores tr:hover td {
+    background: rgba(0, 150, 255, 0.2);
+}
+
+h1 {
+    margin-bottom: 30px;
+    font-size: 2.5rem;
+    text-shadow: 0 0 15px rgba(0, 150, 255, 0.7);
+}
